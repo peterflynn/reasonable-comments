@@ -1,11 +1,25 @@
 Reasonable Comments for Brackets
 ================================
-Simple enhancement for typing block comments in Brackets: when you press Enter, the next line is automatically prefixed with a properly indented "`*`". So for example, instead of this:
+Simple enhancements for typing block comments in Brackets: when you press Enter, the next line is automatically prefixed with a properly indented "`*`". So for example, instead of this:
 
 ```
     /**
 |
      */
+```
+
+You'll get this:
+
+```
+    /**
+     * |
+     */
+```
+
+It also closes the comment automatically when you press Enter, if needed. So when you press Enter here:
+
+```
+    /**|
 ```
 
 You'll get this:

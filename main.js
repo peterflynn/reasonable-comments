@@ -35,17 +35,21 @@ define(function (require, exports, module) {
     
     // Features:
     // - Pressing Enter inside a block comment automatically inserts a correctly indented "*" prefix on the new line
+    // - Pressing Enter after /* automatically inserts the closing */ on the line after the cursor (so 2 new lines are inserted, total)
     
     // TODO:
-    // - typing /* should auto-insert */ after cursor
-    //
-    // - pressing enter just after /* or /** should insert "\n<prefix>* \n<prefix> */" and place cursor on middle line -- ONLY IF
+    // - pressing Enter just after /* or /** should NOT insert */ if comment is already closed - insert ONLY IF
     //   there's either (a) no */ found before EOF, or there's another /* found before the first */ is encountered (i.e. only if
     //   the comment opened here doesn't appear to have been closed yet)
+    //
+    // - typing /* should auto-insert */ after cursor
     //
     // - pressing enter just after /** (or just typing the second "*"?) should include auto-generated "@param {} <argname>" blocks
     //   if next line includes function-like code (via regexp)
     //   (see https://github.com/davidderaedt/annotate-extension ?)
+    //
+    // - pressing forward-delete at end of line inside a comment should delete comment prefix from next line as it gets merged with
+    //   (appended to) current line
     //
     // - gesture to re-word-wrap a comment block
     //
@@ -64,13 +68,19 @@ define(function (require, exports, module) {
             var prefixMatch = line.match(/^\s*(\*|\/\*)/);
             if (prefixMatch) {
                 if (!StringUtils.endsWith(token.string, "*/") || cursor.ch < token.end) {
-                    var prefix;
+                    var prefix, suffix;
                     if (prefixMatch[1] === "*") {
                         prefix = prefixMatch[0];
+                        suffix = "";
                     } else {
                         prefix = prefixMatch[0].replace("/", " "); // if on first line, don't reinsert /* on 2nd line
+                        suffix = "\n" + prefix + "/";
                     }
-                    editor.document.replaceRange("\n" + prefix + " ", cursor);
+                    editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
+                    
+                    cursor.line++;
+                    cursor.ch = prefix.length + 1;
+                    editor.setCursorPos(cursor.line, cursor.ch);
                     return true;
                 }
             }
@@ -94,5 +104,4 @@ define(function (require, exports, module) {
 
     // Attach Enter key listener
     $("#editor-holder")[0].addEventListener("keydown", handleKeyPress, true);
-    
 });
