@@ -91,7 +91,9 @@ define(function (require, exports, module) {
         if (event.keyCode === KeyEvent.DOM_VK_RETURN) {
             var editor = EditorManager.getFocusedEditor();
             if (editor) {
-                if (editor.getModeForSelection() === "javascript") { // start with just JS... later should do anything block-commentable
+                var mode = editor.getModeForSelection();
+                // Start with just JS and C like languages... later should do anything block-commentable
+                if (mode === "javascript" || mode === "clike") {
                     if (handleEnterKey(editor)) {
                         event.stopPropagation(); // don't let CM also handle it
                         event.preventDefault();  // including via natively editing its hidden textarea
