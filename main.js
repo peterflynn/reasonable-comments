@@ -30,19 +30,21 @@ define(function (require, exports, module) {
     // Brackets modules
     var EditorManager       = brackets.getModule("editor/EditorManager"),
         DocumentManager     = brackets.getModule("document/DocumentManager"),
+        TokenUtils          = brackets.getModule("utils/TokenUtils"),
         KeyEvent            = brackets.getModule("utils/KeyEvent"),
         StringUtils         = brackets.getModule("utils/StringUtils");
     
     // Features:
     // - Pressing Enter inside a block comment automatically inserts a correctly indented "*" prefix on the new line
     // - Pressing Enter after /* automatically inserts the closing */ on the line after the cursor (so 2 new lines are inserted, total)
+    //   (only if closing */ isn't already present)
+    
     
     // TODO:
-    // - pressing Enter just after /* or /** should NOT insert */ if comment is already closed - insert ONLY IF
-    //   there's either (a) no */ found before EOF, or there's another /* found before the first */ is encountered (i.e. only if
-    //   the comment opened here doesn't appear to have been closed yet)
-    //
     // - typing /* should auto-insert */ after cursor
+    //
+    // - pressing Enter in `/* | foo` should keep the "foo" part (text from cursor to end of line) inside the comment
+    //   (issue #2)
     //
     // - pressing enter just after /** (or just typing the second "*"?) should include auto-generated "@param {} <argname>" blocks
     //   if next line includes function-like code (via regexp)
@@ -70,11 +72,23 @@ define(function (require, exports, module) {
                 if (!StringUtils.endsWith(token.string, "*/") || cursor.ch < token.end) {
                     var prefix, suffix;
                     if (prefixMatch[1] === "*") {
+                        // Line other than first line
                         prefix = prefixMatch[0];
                         suffix = "";
                     } else {
-                        prefix = prefixMatch[0].replace("/", " "); // if on first line, don't reinsert /* on 2nd line
-                        suffix = "\n" + prefix + "/";
+                        // First line
+                        prefix = prefixMatch[0].replace("/", " "); // don't reinsert /* on 2nd line
+                        
+                        // If comment doesn't appear to be closed, also insert */ on the line after the cursor. We assume this if
+                        // there's either no */ found before EOF, or there's another /* found before the first */ is encountered
+                        var restOfDoc = editor.document.getRange(cursor, { line: editor.lineCount(), ch: 0 });
+                        var nextClose = restOfDoc.indexOf("*/");
+                        var nextOpen  = restOfDoc.indexOf("/*");
+                        if (nextClose === -1 || (nextClose > nextOpen && nextOpen !== -1)) {
+                            suffix = "\n" + prefix + "/";
+                        } else {
+                            suffix = "";
+                        }
                     }
                     editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
                     
@@ -91,9 +105,10 @@ define(function (require, exports, module) {
         if (event.keyCode === KeyEvent.DOM_VK_RETURN) {
             var editor = EditorManager.getFocusedEditor();
             if (editor) {
-                var mode = editor.getModeForSelection();
-                // Start with just JS and C like languages... later should do anything block-commentable
-                if (mode === "javascript" || mode === "clike") {
+                // Only repond in block-commentable languages
+                // (getModeAt() gets us the low-level mode, e.g. "css" rather than "text/x-less")
+                var mode = TokenUtils.getModeAt(editor._codeMirror, editor.getCursorPos()).name;
+                if (mode === "javascript" || mode === "css" || mode === "clike") {
                     if (handleEnterKey(editor)) {
                         event.stopPropagation(); // don't let CM also handle it
                         event.preventDefault();  // including via natively editing its hidden textarea
