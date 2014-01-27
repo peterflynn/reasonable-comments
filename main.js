@@ -120,5 +120,15 @@ define(function (require, exports, module) {
     
 
     // Attach Enter key listener
-    $("#editor-holder")[0].addEventListener("keydown", handleKeyPress, true);
+    var editorHolder = $("#editor-holder")[0];
+    if (editorHolder) {
+        editorHolder.addEventListener("keydown", handleKeyPress, true);
+    } else {
+        console.warn("Unable to attach reasonable comments extension - assuming running in unit test window");
+        // (could verify that by looking at the path the way ExtensionLoader does, but seems like overkill)
+    }
+    
+    
+    // For unit tests
+    exports.handleEnterKey = handleEnterKey;
 });
