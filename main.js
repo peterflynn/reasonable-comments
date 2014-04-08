@@ -63,7 +63,7 @@ define(function (require, exports, module) {
         var token = editor._codeMirror.getTokenAt(cursor);
 //        console.log(token);
         
-        if (token.className === "comment") {
+        if (token.type === "comment") {
             // But are we in a BLOCK comment?
             // For now, we do a dumb approximation: does the line start with /* or *, and the last chars to left of cursor aren't */ ?
             var line = editor.document.getLine(cursor.line);
