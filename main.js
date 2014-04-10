@@ -107,8 +107,8 @@ define(function (require, exports, module) {
             if (editor) {
                 // Only repond in block-commentable languages
                 // (getModeAt() gets us the low-level mode, e.g. "css" rather than "text/x-less")
-                var mode = TokenUtils.getModeAt(editor._codeMirror, editor.getCursorPos()).name;
-                if (mode === "javascript" || mode === "css" || mode === "clike") {
+                var language = editor.getLanguageForSelection();
+                if (language.getBlockCommentPrefix() === "/*" && language.getBlockCommentSuffix() === "*/") {
                     if (handleEnterKey(editor)) {
                         event.stopPropagation(); // don't let CM also handle it
                         event.preventDefault();  // including via natively editing its hidden textarea

@@ -30,6 +30,8 @@ You'll get this:
      */
 ```
 
+Supports any language that uses `/* ... */`-style comments.
+
 
 How to Install
 ==============
@@ -46,4 +48,4 @@ To install extensions:
 MIT-licensed -- see `main.js` for details.
 
 ### Compatibility
-Brackets Sprint 14 or newer (or any version of Adobe Edge Code).
+Brackets Sprint 21 or newer (or Adobe Edge Code Preview 4 or newer).
