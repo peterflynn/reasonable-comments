@@ -4,6 +4,6 @@
     "homepage": "https://github.com/peterflynn/reasonable-comments",
     "author": "Peter Flynn",
     "version": "1.3.0",
-    "engines": { "brackets": ">=0.38" },
+    "engines": { "brackets": ">=0.20" },
     "description": "Simple enhancement for typing block comments in Brackets: when you press Enter, the next line is automatically prefixed with a properly indented \"*\" (and a closing \"*/\" if needed)."
 }
