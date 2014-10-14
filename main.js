@@ -61,7 +61,7 @@ define(function (require, exports, module) {
     function handleEnterKey(editor) {
         var cursor = editor.getCursorPos();
         var token = editor._codeMirror.getTokenAt(cursor);
-//        console.log(token);
+        //console.log(token);
         
         if (token.type === "comment") {
             // But are we in a BLOCK comment?
@@ -90,7 +90,38 @@ define(function (require, exports, module) {
                             suffix = "";
                         }
                     }
-                    editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
+                    // if next line has function or class, insert YUIDOC magic
+                    var nextline = editor.document.getLine(cursor.line + 1);
+                    var reservedword = nextline.match(/class|function/)[0];
+
+                    if (reservedword) {
+                        var append = "", i = 0;
+                        switch (reservedword) {
+                        case "function":
+                            var parts = nextline.match(/(?:function+)(?:\s)(\w*)?\(([\w\s_,]+)\)/);
+                            append += "\n" + prefix + " function description\n" + prefix;
+                            append += "\n" + prefix + " @method " + parts[1];
+
+                            if (parts[2]) {
+                                var variables = parts[2].replace(" ", "").split(",");
+                                for (i = 0; i < variables.length; i++) {
+                                    append += "\n" + prefix + " @param {Type} " + variables[i];
+                                }
+                            }
+                            break;
+                        case "class":
+                            var classname = nextline.match(/class\s+(\w*)/)[1];
+                            append += "\n" + prefix + " class description";
+                            append += "\n" + prefix;
+                            append += "\n" + prefix + " @class " + classname || "";
+                            append += "\n" + prefix + " @author Your Name <email>";
+                            append += "\n" + prefix + " @constructor";
+                            break;
+                        }
+                        editor.document.replaceRange(append + suffix, cursor);
+                    } else {
+                        editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
+                    }
                     
                     cursor.line++;
                     cursor.ch = prefix.length + 1;
