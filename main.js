@@ -21,7 +21,7 @@
  */
 
 
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50, white: true, unparam: true, todo: true */
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50, white: true, unparam: true */
 /*global define, brackets, $ */
 
 define(function (require, exports, module) {
@@ -70,7 +70,7 @@ define(function (require, exports, module) {
             var prefixMatch = line.match(/^\s*(\*|\/\*)/);
             if (prefixMatch) {
                 if (!StringUtils.endsWith(token.string, "*/") || cursor.ch < token.end) {
-                    var prefix, suffix;
+                    var prefix, suffix, commentString = null;
                     if (prefixMatch[1] === "*") {
                         // Line other than first line
                         prefix = prefixMatch[0];
@@ -89,38 +89,46 @@ define(function (require, exports, module) {
                         } else {
                             suffix = "";
                         }
-                    }
-                    // if next line has function or class, insert YUIDoc-like magic
-                    var nextline = editor.document.getLine(cursor.line + 1);
-                    var reservedword = nextline.match(/class|function/)[0];
+                        
+                        // if next line has function or class, insert some YUIDoc-like magic
+                        var nextLine = editor.document.getLine(1 + cursor.line);
+                        var reservedWord = nextLine.match(/class|function/) || null;
 
-					// has to start with /** and contain keyword
-                    if (line.match(/\/\*\*/) && reservedword) {
-                        var append = "", i = 0;
-                        switch (reservedword) {
-                        case "function":
-                            var parts = nextline.match(/(?:function+)(?:\s)(\w*)?\(([\w\s_,]+)\)/);
-                            append += "\n" + prefix + " function description\n" + prefix;
-                            append += "\n" + prefix + " @method " + parts[1];
+                        // has to have double asterisk and contain a keyword
+                        if (line.match(/\/\*\*/) && reservedWord) {
+                            commentString = "";
+                            
+                            var i = 0;
+                            switch (reservedWord[0]) {
+                            case "function":
+                                var parts = nextLine.match(/(?:function+)(?:\s)(\w*)?\(([\w\s_,]+)\)/);
+                                commentString += "\n" + prefix + " function description\n" + prefix;
+                                commentString += "\n" + prefix + " @method " + parts[1];
 
-							// function variables
-                            if (parts[2]) {
-                                var variables = parts[2].replace(" ", "").split(",");
-                                for (i = 0; i < variables.length; i++) {
-                                    append += "\n" + prefix + " @param {Type} " + variables[i];
+                                // function variables
+                                if (parts[2]) {
+                                    var variables = parts[2].replace(/\s/g, "").split(",");
+                                    for (i = 0; i < variables.length; i++) {
+                                        commentString += "\n" + prefix + " @param {Type} " + variables[i];
+                                    }
                                 }
+                                break;
+                            case "class":
+                                var classname = nextLine.match(/class\s+(\w*)/)[1];
+                                commentString += "\n" + prefix + " class description";
+                                commentString += "\n" + prefix;
+                                commentString += "\n" + prefix + " @class " + classname || "";
+                                commentString += "\n" + prefix + " @author Your Name <email>";
+                                commentString += "\n" + prefix + " @constructor";
+                                break;
                             }
-                            break;
-                        case "class":
-                            var classname = nextline.match(/class\s+(\w*)/)[1];
-                            append += "\n" + prefix + " class description";
-                            append += "\n" + prefix;
-                            append += "\n" + prefix + " @class " + classname || "";
-                            append += "\n" + prefix + " @author Your Name <email>";
-                            append += "\n" + prefix + " @constructor";
-                            break;
+                            commentString += suffix;
+                            
                         }
-                        editor.document.replaceRange(append + suffix, cursor);
+                    }
+                    
+                    if (commentString) {
+                        editor.document.replaceRange(commentString, cursor);
                     } else {
                         editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
                     }
