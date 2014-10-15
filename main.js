@@ -93,43 +93,36 @@ define(function (require, exports, module) {
 
                         // has to have double asterisk and contain a keyword
                         if (line.match(/\/\*\*/) && reservedWord) {
-                            commentString = "";
                             
                             var i = 0;
                             switch (reservedWord[0]) {
                             case "function":
-                                var parts = nextLine.match(/(?:function+)(?:\s)(\w*)?\(([\w\s_,]+)\)/);
-                                commentString += "\n" + prefix + " function description\n" + prefix;
-                                commentString += "\n" + prefix + " @method " + parts[1];
+                                var parts = nextLine.match(/(?:function+)(?:\s)(\w*)?\(([\w\s,]*)?\)/);
+                                if (parts) {
+                                    commentString = "\n" + prefix + " function description\n" + prefix + "\n" + prefix + " @method " + parts[1];
 
-                                // function variables
-                                if (parts[2]) {
-                                    var variables = parts[2].replace(/\s/g, "").split(",");
-                                    for (i = 0; i < variables.length; i++) {
-                                        commentString += "\n" + prefix + " @param {Type} " + variables[i];
+                                    // function variables
+                                    if (parts[2]) {
+                                        var variables = parts[2].replace(/\s/g, "").split(",");
+                                        for (i = 0; i < variables.length; i++) {
+                                            commentString += "\n" + prefix + " @param {Type} " + variables[i];
+                                        }
                                     }
+                                    commentString += "\n" + prefix + " @return {Type} " + suffix;
                                 }
-                                commentString += "\n" + prefix + " @return {Type} ";
                                 break;
                             case "class":
-                                var classname = nextLine.match(/class\s+(\w*)/)[1];
-                                commentString += "\n" + prefix + " class description";
-                                commentString += "\n" + prefix;
-                                commentString += "\n" + prefix + " @class " + classname || "";
-                                commentString += "\n" + prefix + " @author Your Name <email>";
-                                commentString += "\n" + prefix + " @constructor";
+                                var classname = nextLine.match(/class\s+(\w*)/);
+                                if (classname) {
+                                    commentString = "\n" + prefix + " class description" + "\n" + prefix;
+                                    commentString += "\n" + prefix + " @class " + classname[1] || "";
+                                    commentString += "\n" + prefix + " @author Your Name <email>" + "\n" + prefix + " @constructor " + suffix;
+                                }
                                 break;
                             }
-                            commentString += suffix;
-                            
                         }
                     }
-                    
-                    if (commentString) {
-                        editor.document.replaceRange(commentString, cursor);
-                    } else {
-                        editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
-                    }
+                    editor.document.replaceRange(commentString || "\n" + prefix + " " + suffix, cursor);
                     
                     cursor.line++;
                     cursor.ch = prefix.length + 1;
@@ -157,7 +150,6 @@ define(function (require, exports, module) {
         }
     }
     
-
     // Attach Enter key listener
     var editorHolder = $("#editor-holder")[0];
     if (editorHolder) {
@@ -166,8 +158,6 @@ define(function (require, exports, module) {
         console.warn("Unable to attach reasonable comments extension - assuming running in unit test window");
         // (could verify that by looking at the path the way ExtensionLoader does, but seems like overkill)
     }
-    
-    
     // For unit tests
     exports.handleEnterKey = handleEnterKey;
 });

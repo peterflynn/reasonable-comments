@@ -66,7 +66,7 @@ To get:
      * @author Your Name <email>
      * @constructor
      */
-     class Foo {
+    class Foo {
 ```
 
 
