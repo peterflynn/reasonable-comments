@@ -21,7 +21,7 @@
  */
 
 
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50, white: true, unparam: true, todo: true */
 /*global define, brackets, $ */
 
 define(function (require, exports, module) {
@@ -29,8 +29,8 @@ define(function (require, exports, module) {
     
     // Brackets modules
     var EditorManager       = brackets.getModule("editor/EditorManager"),
-        DocumentManager     = brackets.getModule("document/DocumentManager"),
-        TokenUtils          = brackets.getModule("utils/TokenUtils"),
+        //DocumentManager     = brackets.getModule("document/DocumentManager"),
+        //TokenUtils          = brackets.getModule("utils/TokenUtils"),
         KeyEvent            = brackets.getModule("utils/KeyEvent"),
         StringUtils         = brackets.getModule("utils/StringUtils");
     
@@ -90,11 +90,12 @@ define(function (require, exports, module) {
                             suffix = "";
                         }
                     }
-                    // if next line has function or class, insert YUIDOC magic
+                    // if next line has function or class, insert YUIDoc-like magic
                     var nextline = editor.document.getLine(cursor.line + 1);
                     var reservedword = nextline.match(/class|function/)[0];
 
-                    if (reservedword) {
+					// has to start with /** and contain keyword
+                    if (line.match(/\/\*\*/) && reservedword) {
                         var append = "", i = 0;
                         switch (reservedword) {
                         case "function":
@@ -102,6 +103,7 @@ define(function (require, exports, module) {
                             append += "\n" + prefix + " function description\n" + prefix;
                             append += "\n" + prefix + " @method " + parts[1];
 
+							// function variables
                             if (parts[2]) {
                                 var variables = parts[2].replace(" ", "").split(",");
                                 for (i = 0; i < variables.length; i++) {
