@@ -29,8 +29,6 @@ define(function (require, exports, module) {
     
     // Brackets modules
     var EditorManager       = brackets.getModule("editor/EditorManager"),
-        //DocumentManager     = brackets.getModule("document/DocumentManager"),
-        //TokenUtils          = brackets.getModule("utils/TokenUtils"),
         KeyEvent            = brackets.getModule("utils/KeyEvent"),
         StringUtils         = brackets.getModule("utils/StringUtils");
     
@@ -61,7 +59,6 @@ define(function (require, exports, module) {
     function handleEnterKey(editor) {
         var cursor = editor.getCursorPos();
         var token = editor._codeMirror.getTokenAt(cursor);
-        //console.log(token);
         
         if (token.type === "comment") {
             // But are we in a BLOCK comment?
@@ -112,6 +109,7 @@ define(function (require, exports, module) {
                                         commentString += "\n" + prefix + " @param {Type} " + variables[i];
                                     }
                                 }
+                                commentString += "\n" + prefix + " @return {Type} ";
                                 break;
                             case "class":
                                 var classname = nextLine.match(/class\s+(\w*)/)[1];

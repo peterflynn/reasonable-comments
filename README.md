@@ -32,6 +32,44 @@ You'll get this:
 
 Supports any language that uses `/* ... */`-style comments.
 
+Simple predefined YUIDoc/Javadoc/PHPDoc-style comments for function and class. Just make sure the function/class defining row is right below when pressing Enter.
+
+```
+    /**|
+    function foo(bar) {
+```
+
+To get:
+```
+    /**
+     * function description
+     *
+     * @method foo
+     * @param {Type} bar
+     * @return {Type}
+     */
+    function foo(bar) {    
+```
+
+Or:
+```
+    /**|
+    class Foo { 
+```
+
+To get:
+```
+    /**
+     * class description
+     *
+     * @class Foo
+     * @author Your Name <email>
+     * @constructor
+     */
+     class Foo {
+```
+
+
 
 How to Install
 ==============
