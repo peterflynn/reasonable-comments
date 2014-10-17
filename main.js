@@ -55,7 +55,6 @@ define(function (require, exports, module) {
     //
     // - pressing enter in *middle* of //-style comment should split it onto second line with // prefix
     
-    
     function handleEnterKey(editor) {
         var cursor = editor.getCursorPos();
         var token = editor._codeMirror.getTokenAt(cursor);
@@ -65,6 +64,7 @@ define(function (require, exports, module) {
             // For now, we do a dumb approximation: does the line start with /* or *, and the last chars to left of cursor aren't */ ?
             var line = editor.document.getLine(cursor.line);
             var prefixMatch = line.match(/^\s*(\*|\/\*)/);
+            var followingText;
             if (prefixMatch) {
                 if (!StringUtils.endsWith(token.string, "*/") || cursor.ch < token.end) {
                     var prefix, suffix, commentString = null;
@@ -73,6 +73,11 @@ define(function (require, exports, module) {
                         prefix = prefixMatch[0];
                         suffix = "";
                     } else {
+                        // Get text after cursor
+                        if (token.end > cursor.ch) {
+                            followingText = token.string.substring(cursor.ch, token.end);
+                            editor.document.replaceRange("", cursor, { line: cursor.line, ch: token.end });
+                        }
                         // First line
                         prefix = prefixMatch[0].replace("/", " "); // don't reinsert /* on 2nd line
                         
@@ -127,6 +132,10 @@ define(function (require, exports, module) {
                     cursor.line++;
                     cursor.ch = prefix.length + 1;
                     editor.setCursorPos(cursor.line, cursor.ch);
+                    // If there was text, place inside comment
+                    if (followingText) {
+                        editor.document.replaceRange(followingText, editor.getCursorPos());
+                    }
                     return true;
                 }
             }
