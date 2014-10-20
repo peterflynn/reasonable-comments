@@ -30,6 +30,21 @@ You'll get this:
      */
 ```
 
+Text after cursor is inserted inside comment
+
+```
+    /**|foo bar
+```
+
+And you'll get:
+
+```
+    /**
+     * |foo bar
+     */
+```
+
+
 Supports any language that uses `/* ... */`-style comments.
 
 Simple predefined YUIDoc/Javadoc/PHPDoc-style comments for function and class. Just make sure the function/class defining row is right below when pressing Enter.
