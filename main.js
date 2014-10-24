@@ -21,7 +21,7 @@
  */
 
 
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50, white: true, unparam: true */
 /*global define, brackets, $ */
 
 define(function (require, exports, module) {
@@ -29,8 +29,6 @@ define(function (require, exports, module) {
     
     // Brackets modules
     var EditorManager       = brackets.getModule("editor/EditorManager"),
-        DocumentManager     = brackets.getModule("document/DocumentManager"),
-        TokenUtils          = brackets.getModule("utils/TokenUtils"),
         KeyEvent            = brackets.getModule("utils/KeyEvent"),
         StringUtils         = brackets.getModule("utils/StringUtils");
     
@@ -57,25 +55,29 @@ define(function (require, exports, module) {
     //
     // - pressing enter in *middle* of //-style comment should split it onto second line with // prefix
     
-    
     function handleEnterKey(editor) {
         var cursor = editor.getCursorPos();
         var token = editor._codeMirror.getTokenAt(cursor);
-//        console.log(token);
         
         if (token.type === "comment") {
             // But are we in a BLOCK comment?
             // For now, we do a dumb approximation: does the line start with /* or *, and the last chars to left of cursor aren't */ ?
             var line = editor.document.getLine(cursor.line);
             var prefixMatch = line.match(/^\s*(\*|\/\*)/);
+            var followingText;
             if (prefixMatch) {
                 if (!StringUtils.endsWith(token.string, "*/") || cursor.ch < token.end) {
-                    var prefix, suffix;
+                    var prefix, suffix, commentString = null;
                     if (prefixMatch[1] === "*") {
                         // Line other than first line
                         prefix = prefixMatch[0];
                         suffix = "";
                     } else {
+                        // Get text after cursor
+                        if (token.end > cursor.ch) {
+                            followingText = token.string.substring(cursor.ch, token.end);
+                            editor.document.replaceRange("", cursor, { line: cursor.line, ch: token.end });
+                        }
                         // First line
                         prefix = prefixMatch[0].replace("/", " "); // don't reinsert /* on 2nd line
                         
@@ -89,12 +91,51 @@ define(function (require, exports, module) {
                         } else {
                             suffix = "";
                         }
+                        
+                        // if next line has function or class, insert some YUIDoc-like magic
+                        var nextLine = editor.document.getLine(1 + cursor.line);
+                        var reservedWord = nextLine.match(/class|function/) || null;
+
+                        // has to have double asterisk and contain a keyword
+                        if (line.match(/\/\*\*/) && reservedWord) {
+                            
+                            var i = 0;
+                            switch (reservedWord[0]) {
+                            case "function":
+                                var parts = nextLine.match(/(?:function+)(?:\s)(\w*)?\(([\w\s,]*)?\)/);
+                                if (parts) {
+                                    commentString = "\n" + prefix + " function description\n" + prefix + "\n" + prefix + " @method " + parts[1];
+
+                                    // function variables
+                                    if (parts[2]) {
+                                        var variables = parts[2].replace(/\s/g, "").split(",");
+                                        for (i = 0; i < variables.length; i++) {
+                                            commentString += "\n" + prefix + " @param {Type} " + variables[i];
+                                        }
+                                    }
+                                    commentString += "\n" + prefix + " @return {Type} " + suffix;
+                                }
+                                break;
+                            case "class":
+                                var classname = nextLine.match(/class\s+(\w*)/);
+                                if (classname) {
+                                    commentString = "\n" + prefix + " class description" + "\n" + prefix;
+                                    commentString += "\n" + prefix + " @class " + classname[1] || "";
+                                    commentString += "\n" + prefix + " @author Your Name <email>" + "\n" + prefix + " @constructor " + suffix;
+                                }
+                                break;
+                            }
+                        }
                     }
-                    editor.document.replaceRange("\n" + prefix + " " + suffix, cursor);
+                    editor.document.replaceRange(commentString || "\n" + prefix + " " + suffix, cursor);
                     
                     cursor.line++;
                     cursor.ch = prefix.length + 1;
                     editor.setCursorPos(cursor.line, cursor.ch);
+                    // If there was text, place inside comment
+                    if (followingText) {
+                        editor.document.replaceRange(followingText, editor.getCursorPos());
+                    }
                     return true;
                 }
             }
@@ -118,7 +159,6 @@ define(function (require, exports, module) {
         }
     }
     
-
     // Attach Enter key listener
     var editorHolder = $("#editor-holder")[0];
     if (editorHolder) {
@@ -127,8 +167,6 @@ define(function (require, exports, module) {
         console.warn("Unable to attach reasonable comments extension - assuming running in unit test window");
         // (could verify that by looking at the path the way ExtensionLoader does, but seems like overkill)
     }
-    
-    
     // For unit tests
     exports.handleEnterKey = handleEnterKey;
 });
